@@ -7,7 +7,12 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int len = 0;
+    while (*str != '\0') {
+        len++;
+        str++;
+    }
+    return len;
 }
 
 
@@ -19,6 +24,15 @@ void my_strcat(char *str_1, char *str_2) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    while (*str_1 != '\0') {
+        str_1++;
+    }
+    while (*str_2 != '\0') {
+        *str_1 = *str_2;
+        str_1++;
+        str_2++;       
+    }
+    *str_1 = '\0'; 
 }
 
 
@@ -31,7 +45,28 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+     if (*p == '\0') {
+        return s;
+    }
+
+    char *start = s;
+    while (*start != '\0') {
+        char *i = start;
+        char *j = p;
+
+        while (*i != '\0' && *j != '\0' && *i == *j) {
+            i++;
+            j++;
+        }
+
+        if (*j == '\0') {
+            return start;
+        }
+
+        start++;
+    }
+
+    return nullptr;
 }
 
 
@@ -96,7 +131,16 @@ void rgb2gray(float *in, float *out, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    // ...
+    for (int row = 0; row < h; row++) {
+        for (int col = 0; col < w; col++) {
+            int pixel = row * w + col;
+            int rgb = pixel * 3;
+            float r = in[rgb];
+            float g = in[rgb + 1];
+            float b = in[rgb + 2];
+            out[pixel] = 0.2989f * r + 0.5870f * g + 0.1140f * b;
+        }
+    }
 }
 
 // 练习5，实现图像处理算法 resize：缩小或放大图像
@@ -198,6 +242,43 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
 
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
+    for (int ny = 0; ny < new_h; ny++) {
+        for (int nx = 0; nx < new_w; nx++) {
+            // 目标  原图
+            float x0 = nx / scale;
+            float y0 = ny / scale;
+
+            // 强制int下取整
+            int x1 = (int)x0;
+            int y1 = (int)y0;
+            int x2 = x1 + 1;
+            int y2 = y1 + 1;
+
+            // 边界检查
+            if (x1 < 0) x1 = 0;
+            if (y1 < 0) y1 = 0;
+            if (x2 >= w) x2 = w - 1;
+            if (y2 >= h) y2 = h - 1;
+
+            float dx = x0 - x1;
+            float dy = y0 - y1;
+
+            for (int ch = 0; ch < c; ch++) {
+                float P1 = in[ y1 * w * c + x1 * c + ch ];
+                float P2 = in[ y1 * w * c + x2 * c + ch ];
+                float P3 = in[ y2 * w * c + x1 * c + ch ];
+                float P4 = in[ y2 * w * c + x2 * c + ch ];
+
+                // 公式
+                float val = P1*(1-dx)*(1-dy)
+                          + P2*dx*(1-dy)
+                          + P3*(1-dx)*dy
+                          + P4*dx*dy;
+
+                out[ ny * new_w * c + nx * c + ch ] = val;
+            }
+        }
+    }
 
 }
 
@@ -211,7 +292,7 @@ void hist_eq(float *in, int h, int w) {
      * (3) int w:      width，即图片的宽度。
      *
      * 参考资料：
-     * https://blog.csdn.net/qq_15971883/article/details/88699218
+     * $https://blog.csdn.net/qq_15971883/article/details/88699218
      * 其它的博客也行。
      *
      * 提示：
@@ -221,4 +302,30 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    //防止没图像
+        if (h <= 0 || w <= 0) {
+            return;
+        }
+
+    int count = h * w;
+    //柱状图
+    int histogram[256] = {0};
+    //映射表
+    float mapping[256] = {0};
+
+    for (int i = 0; i < count; i++) {
+        int gray = static_cast<int>(in[i]);
+        histogram[gray]++;
+    }
+
+    int cumulative = 0;
+    for (int gray = 0; gray < 256; gray++) {
+        cumulative += histogram[gray];
+        mapping[gray] = 255.0f * cumulative / count;
+    }
+
+    for (int i = 0; i < count; i++) {
+        int gray = static_cast<int>(in[i]);
+        in[i] = mapping[gray];
+    }
 }
